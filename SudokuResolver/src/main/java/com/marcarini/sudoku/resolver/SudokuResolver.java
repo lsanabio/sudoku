@@ -1,6 +1,5 @@
 package com.marcarini.sudoku.resolver;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -95,7 +94,16 @@ public class SudokuResolver {
 
 	}
 	
+	/**
+	 * Set the value of a position in the sudoku matrix and validates if that value do not break any rules of the game, if it does it throws
+	 * a RunTimeExcepion.
+	 * @param linha Line.
+	 * @param coluna Column.
+	 * @param matriz Sudoku matrix.
+	 * @param valor Value to be setted.
+	 */
 	private void setValorMatriz(int linha, int coluna, int[][] matriz, int valor) {
+		//Search for the same value on a line or on a column.
 		for (int i = 0; i < 9; i++) {
 			if (matriz[linha][i] == valor) {
 				this.imprimirEstadoErro(linha, coluna, matriz, valor);
@@ -110,6 +118,7 @@ public class SudokuResolver {
 		int qLinha = getLinhaOuColunaInicialQuadrande(linha);
 		int qColuna = getLinhaOuColunaInicialQuadrande(coluna);
 
+		//Search for the same value on the same square.
 		for (int i = qLinha; i < (qLinha + 3); i++) {
 			for (int j = qColuna; j < (qColuna + 3); j++) {
 				if (matriz[i][j] == valor) {
@@ -119,10 +128,13 @@ public class SudokuResolver {
 			}
 		}
 		
+		//Clean the possibilities list of the cell which will be setted.
 		ArrayList<Integer> mo = matrizOpcoes.get(this.getChaveOpcoes(linha, coluna));
 		if (mo != null) {
 			mo.clear();
 		}
+		
+		//Set the value after all checks.
 		matriz[linha][coluna] = valor;
 	}
 	
@@ -138,6 +150,10 @@ public class SudokuResolver {
 		return linha + "X" + coluna;
 	}
 	
+	/**
+	 * Prints the sudoki matrix.
+	 * @param matriz
+	 */
 	public void imprimirSudoku(int[][] matriz) {
 
 		for (int i = 0; i < 9; i++) {
@@ -161,24 +177,40 @@ public class SudokuResolver {
 	}
 	
 	
+	/**
+	 * Print the sudoku matriz with all possibilities for each cell.
+	 * @param matriz Matriz sudoku.
+	 */
 	public void imprimirOportunidades(int[][] matriz) {
-
 		System.out.println("----------- Oportunidades - Inicio -------------");
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9; j++) {
-				System.out.println(" ");
-				System.out.print("Posição (" + i + "," + j + "): ");
 				ArrayList<Integer> opcaoesCelula = matrizOpcoes.get(this.getChaveOpcoes(i, j));
-				if (opcaoesCelula != null) {
-					for (int x = 0 ; x < opcaoesCelula.size(); x++) {
-						if (x > 0) {
-							System.out.print(", ");
-						}
-						System.out.print(opcaoesCelula.get(x).intValue());
+				if (opcaoesCelula == null) {
+					System.out.print("   (" + matriz[i][j] + ")   ");
+				} else {
+					for (int x = 1; x < 10; x++) {
+						if (opcaoesCelula.contains(x)) {
+							System.out.print(x);
+						} else {
+							System.out.print("_");
+						}	
 					}
+					
+				}
+				
+				if (j == 2 || j == 5) {
+					System.out.print(" | ");
+				} else {
+					System.out.print("   ");
 				}
 			}
-			
+			System.out.print("||");
+			System.out.print("\n");
+			if (i == 2 || i == 5) {
+				System.out.print("---------------------------------------------------------------------------------------------------------");
+				System.out.print("\n");
+			}
 		}
 		System.out.println("\n----------- Oportunidades - Fim -------------");
 	}
@@ -233,6 +265,14 @@ public class SudokuResolver {
 	}
 	
 	
+	/**
+	 * Verify if any possibilities of any cell of a quadrant is only possible in that cell, if it is, set it to that possibility and break the method.
+	 * @param opcoes
+	 * @param linha
+	 * @param coluna
+	 * @param matriz
+	 * @return
+	 */
 	public boolean aplicarRegraPossibilidadesQuadrante(ArrayList<Integer> opcoes, int linha, int coluna, int[][] matriz) {
 		boolean encontrouValor = false;
 		ArrayList<Integer> opcoesCelulaAtual = matrizOpcoes.get(this.getChaveOpcoes(linha, coluna));
@@ -252,6 +292,13 @@ public class SudokuResolver {
 	}
 	
 	
+	/**
+	 * Checks if a possibility of a cell it is a possibility in any other cell of that quadrant, if it is not returns false. If it is return true.
+	 * @param op Possibility.
+	 * @param linha line
+	 * @param coluna column
+	 * @return True for having other cells with the same possibility and false for not having other cells with the same possibility.
+	 */
 	private boolean verificaPossibilidadeOcorrenciaNoQuadrante(Integer op, int linha, int coluna) {
 		int qLinha = getLinhaOuColunaInicialQuadrande(linha);
 		int qColuna = getLinhaOuColunaInicialQuadrande(coluna);
@@ -302,20 +349,21 @@ public class SudokuResolver {
 		
 		if (opcaoColuna == null) {
 			opcaoColuna = new ArrayList<Integer>();
-			qntOpcoesPorColunaQuadrante.put(this.getChaveOportunidadePorColunaQuadrante(op.intValue(), linha, coluna), opcaoLinha);
+			qntOpcoesPorColunaQuadrante.put(this.getChaveOportunidadePorColunaQuadrante(op.intValue(), linha, coluna), opcaoColuna);
 		}
+		
 		//Analisar se existem ocorrencia de oportunidade somente em uma linha ou só em uma coluna do quadrante.
 		for (int i = qLinha; i < (qLinha + 3); i++) {
 			for (int j = qColuna; j < (qColuna + 3); j++) {
 				ArrayList<Integer> opcoesCelulaAtual = matrizOpcoes.get(this.getChaveOpcoes(i, j));
 				if (opcoesCelulaAtual != null && opcoesCelulaAtual.contains(op)) {
 
-					if (!opcaoLinha.contains(new Integer(i))) {
-						opcaoLinha.add(new Integer(i));
+					if (!opcaoLinha.contains(i)) {
+						opcaoLinha.add(i);
 					}
 								
-					if (!opcaoLinha.contains(new Integer(j))) {
-						opcaoLinha.add(new Integer(j));
+					if (!opcaoColuna.contains(j)) {
+						opcaoColuna.add(j);
 					}
 				}
 			}
@@ -326,10 +374,12 @@ public class SudokuResolver {
 		if (opcaoLinha.size() == 1) {
 			int i = opcaoLinha.get(0).intValue();
 			for (int j = 0; j < 9; j++) {
-				if (j < qColuna && j >= (qColuna + 3)) {
+				if (j < qColuna || j >= (qColuna + 3)) {
 					ArrayList<Integer> opcoesCelulaAtual = matrizOpcoes.get(this.getChaveOpcoes(i, j));
-					opcoesCelulaAtual.remove(op);
-					removeuOportunidade = true;
+					if (opcoesCelulaAtual != null && opcoesCelulaAtual.contains(op)) {
+						opcoesCelulaAtual.remove(op);
+						removeuOportunidade = true;
+					}
 				}
 			}
 		}
@@ -338,10 +388,12 @@ public class SudokuResolver {
 		if (opcaoColuna.size() == 1) {
 			int j = opcaoColuna.get(0).intValue();
 			for (int i = 0; i < 9; i++) {
-				if (i < qLinha && i >= (qLinha + 3)) {
+				if (i < qLinha || i >= (qLinha + 3)) {
 					ArrayList<Integer> opcoesCelulaAtual = matrizOpcoes.get(this.getChaveOpcoes(i, j));
-					opcoesCelulaAtual.remove(op);
-					removeuOportunidade = true;
+					if (opcoesCelulaAtual != null && opcoesCelulaAtual.contains(op)) {
+						opcoesCelulaAtual.remove(op);
+						removeuOportunidade = true;
+					}
 				}
 			}
 		}
@@ -350,7 +402,7 @@ public class SudokuResolver {
 			for (int i = 0; i < 9; i++) {
 				for (int j = 0; j < 9; j++) {
 					ArrayList<Integer> opcoesCelulaAtual = matrizOpcoes.get(this.getChaveOpcoes(i, j));
-					if (opcoesCelulaAtual.size() == 1) {
+					if (opcoesCelulaAtual!= null && opcoesCelulaAtual.size() == 1) {
 						setValorMatriz(i, j, matriz, opcoesCelulaAtual.get(0).intValue());
 					}
 				}
